@@ -21,6 +21,12 @@ app.use("/api/borrow", borrowRoutes_1.default);
 app.get("/api/health", (req, res) => {
     res.status(200).json({ status: "OK" });
 });
+app.use((0, cors_1.default)({
+    origin: [
+        "http://localhost:3000",
+        "https://library-management-frontend-ecru.vercel.app",
+    ],
+}));
 // 404 handler
 app.use((req, res) => {
     res.status(404).json({ message: "Not Found" });

@@ -12,7 +12,10 @@ export const getBooks = async (req: Request, res: Response) => {
 };
 
 // Get a single book by ID
-export const getBookById = async (req: Request, res: Response) => {
+export const getBookById = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   try {
     const book = await Book.findById(req.params.id);
     if (!book) {

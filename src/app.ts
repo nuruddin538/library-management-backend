@@ -23,6 +23,15 @@ app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "OK" });
 });
 
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "https://library-management-frontend-ecru.vercel.app",
+    ],
+  })
+);
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ message: "Not Found" });
