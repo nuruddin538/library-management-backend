@@ -23,7 +23,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteBook = exports.updatebook = exports.createBook = exports.getBookById = exports.getBooks = void 0;
+exports.deleteBook = exports.updateBook = exports.createBook = exports.getBookById = exports.getBooks = void 0;
 const Book_1 = __importDefault(require("../models/Book"));
 // Get all books
 const getBooks = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -43,10 +43,10 @@ const getBookById = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         if (!book) {
             return res.status(404).json({ message: "Book not found" });
         }
-        res.status(200).json(book);
+        return res.status(200).json(book);
     }
     catch (err) {
-        res.status(500).json({ message: "Error fetching book", error: err });
+        return res.status(500).json({ message: "Error fetching book", error: err });
     }
 });
 exports.getBookById = getBookById;
@@ -72,20 +72,20 @@ const createBook = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
 });
 exports.createBook = createBook;
 // Update a book
-const updatebook = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const updateBook = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const _a = req.body, { copies } = _a, updateData = __rest(_a, ["copies"]);
-        const updatedBook = yield Book_1.default.findByIdAndUpdate(req.params.id, Object.assign(Object.assign({}, updateData), { copies, available: copies > 0 }), { new: true });
-        if (!updatedBook) {
+        const updatedbook = yield Book_1.default.findByIdAndUpdate(req.params.id, Object.assign(Object.assign({}, updateData), { copies, available: copies > 0 }), { new: true });
+        if (!updatedbook) {
             return res.status(404).json({ message: "Book not found" });
         }
-        res.status(200).json(updatedBook);
+        res.status(200).json(updatedbook);
     }
     catch (err) {
         res.status(400).json({ message: "Error updating book", error: err });
     }
 });
-exports.updatebook = updatebook;
+exports.updateBook = updateBook;
 // Delete a Book
 const deleteBook = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {

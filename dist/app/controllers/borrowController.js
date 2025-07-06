@@ -19,21 +19,23 @@ const Borrow_1 = __importDefault(require("../models/Borrow"));
 const borrowBook = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { bookId } = req.params;
     const { quantity, dueDate } = req.body;
+    if (!bookId || !quantity || !dueDate) {
+        return res.status(400).json({ message: "Missing required fields" });
+    }
     try {
         const book = yield Book_1.default.findById(bookId);
         if (!book) {
             return res.status(404).json({ message: "Book not found" });
         }
-        if (quantity > book.copies) {
+        if (book.copies < quantity) {
             return res.status(400).json({ message: "Not enough copies available" });
         }
         // Create borrow record
-        const newBorrow = new Borrow_1.default({
+        const newBorrow = yield Borrow_1.default.create({
             book: bookId,
             quantity,
-            dueDate: new Date(dueDate),
+            dueDate,
         });
-        yield newBorrow.save();
         // Update book copies
         book.copies -= quantity;
         book.available = book.copies > 0;

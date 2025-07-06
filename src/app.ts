@@ -8,8 +8,17 @@ import connectDB from "./app/config/db";
 const app = express();
 
 // Middleware
-app.use(cors());
 app.use(express.json());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "https://library-management-frontend-ecru.vercel.app",
+    ],
+    credentials: true,
+  })
+);
 
 // Database connection
 connectDB();
@@ -22,15 +31,6 @@ app.use("/api/borrow", borrowRoutes);
 app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "OK" });
 });
-
-app.use(
-  cors({
-    origin: [
-      "http://localhost:3000",
-      "https://library-management-frontend-ecru.vercel.app",
-    ],
-  })
-);
 
 // 404 handler
 app.use((req, res) => {

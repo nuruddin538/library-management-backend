@@ -7,23 +7,25 @@ export const borrowBook = async (req: Request, res: Response) => {
   const { bookId } = req.params;
   const { quantity, dueDate } = req.body;
 
+  if (!bookId || !quantity || !dueDate) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
   try {
     const book = await Book.findById(bookId);
     if (!book) {
       return res.status(404).json({ message: "Book not found" });
     }
-    if (quantity > book.copies) {
+    if (book.copies < quantity) {
       return res.status(400).json({ message: "Not enough copies available" });
     }
 
     // Create borrow record
-    const newBorrow = new Borrow({
+    const newBorrow = await Borrow.create({
       book: bookId,
       quantity,
-      dueDate: new Date(dueDate),
+      dueDate,
     });
-
-    await newBorrow.save();
 
     // Update book copies
     book.copies -= quantity;

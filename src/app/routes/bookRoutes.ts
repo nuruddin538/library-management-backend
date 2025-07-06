@@ -1,36 +1,19 @@
-import { Request, Response, Router } from "express";
+import { Router } from "express";
+
 import {
   createBook,
   deleteBook,
   getBookById,
   getBooks,
-  updatebook,
+  updateBook,
 } from "../controllers/bookController";
 
 const router = Router();
 
 router.get("/", getBooks);
-router.get("/:id", async (req: Request, res: Response) => {
-  try {
-    await getBookById(req, res);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+router.get("/:id", getBookById);
 router.post("/", createBook);
-router.put("/:id", async (req: Request, res: Response) => {
-  try {
-    await updatebook(req, res);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-router.delete("/:id", async (req: Response, res: Response) => {
-  try {
-    await deleteBook(req, res);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+router.put("/:id", updateBook);
+router.delete("/:id", deleteBook);
 
 export default router;

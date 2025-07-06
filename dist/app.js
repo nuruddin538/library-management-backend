@@ -10,8 +10,15 @@ const borrowRoutes_1 = __importDefault(require("./app/routes/borrowRoutes"));
 const db_1 = __importDefault(require("./app/config/db"));
 const app = (0, express_1.default)();
 // Middleware
-app.use((0, cors_1.default)());
 app.use(express_1.default.json());
+app.use((0, cors_1.default)({
+    origin: [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "https://library-management-frontend-ecru.vercel.app",
+    ],
+    credentials: true,
+}));
 // Database connection
 (0, db_1.default)();
 // Routes
@@ -21,12 +28,6 @@ app.use("/api/borrow", borrowRoutes_1.default);
 app.get("/api/health", (req, res) => {
     res.status(200).json({ status: "OK" });
 });
-app.use((0, cors_1.default)({
-    origin: [
-        "http://localhost:3000",
-        "https://library-management-frontend-ecru.vercel.app",
-    ],
-}));
 // 404 handler
 app.use((req, res) => {
     res.status(404).json({ message: "Not Found" });

@@ -21,9 +21,9 @@ export const getBookById = async (
     if (!book) {
       return res.status(404).json({ message: "Book not found" });
     }
-    res.status(200).json(book);
+    return res.status(200).json(book);
   } catch (err) {
-    res.status(500).json({ message: "Error fetching book", error: err });
+    return res.status(500).json({ message: "Error fetching book", error: err });
   }
 };
 
@@ -49,10 +49,10 @@ export const createBook = async (req: Request, res: Response) => {
 };
 
 // Update a book
-export const updatebook = async (req: Request, res: Response) => {
+export const updateBook = async (req: Request, res: Response) => {
   try {
     const { copies, ...updateData } = req.body;
-    const updatedBook = await Book.findByIdAndUpdate(
+    const updatedbook = await Book.findByIdAndUpdate(
       req.params.id,
       {
         ...updateData,
@@ -61,10 +61,10 @@ export const updatebook = async (req: Request, res: Response) => {
       },
       { new: true }
     );
-    if (!updatedBook) {
+    if (!updatedbook) {
       return res.status(404).json({ message: "Book not found" });
     }
-    res.status(200).json(updatedBook);
+    res.status(200).json(updatedbook);
   } catch (err) {
     res.status(400).json({ message: "Error updating book", error: err });
   }
