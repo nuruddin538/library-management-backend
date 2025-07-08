@@ -12,9 +12,9 @@ app.use(express.json());
 app.use(
   cors({
     origin: [
-      "http://localhost:3000",
-      "http://localhost:5173",
       "https://library-management-frontend-ecru.vercel.app",
+      // "http://localhost:3000",
+      "http://localhost:5173",
     ],
     credentials: true,
   })

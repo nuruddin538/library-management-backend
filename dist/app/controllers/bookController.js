@@ -41,12 +41,12 @@ const getBookById = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     try {
         const book = yield Book_1.default.findById(req.params.id);
         if (!book) {
-            return res.status(404).json({ message: "Book not found" });
+            res.status(404).json({ message: "Book not found" });
         }
-        return res.status(200).json(book);
+        res.status(200).json(book);
     }
     catch (err) {
-        return res.status(500).json({ message: "Error fetching book", error: err });
+        res.status(500).json({ message: "Error fetching book", error: err });
     }
 });
 exports.getBookById = getBookById;
@@ -77,7 +77,7 @@ const updateBook = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         const _a = req.body, { copies } = _a, updateData = __rest(_a, ["copies"]);
         const updatedbook = yield Book_1.default.findByIdAndUpdate(req.params.id, Object.assign(Object.assign({}, updateData), { copies, available: copies > 0 }), { new: true });
         if (!updatedbook) {
-            return res.status(404).json({ message: "Book not found" });
+            res.status(404).json({ message: "Book not found" });
         }
         res.status(200).json(updatedbook);
     }
@@ -91,7 +91,7 @@ const deleteBook = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     try {
         const deletedBook = yield Book_1.default.findByIdAndDelete(req.params.id);
         if (!deletedBook) {
-            return res.status(404).json({ message: "Book not found" });
+            res.status(404).json({ message: "Book not found" });
         }
         res.status(200).json({ message: "Book deleted successfully" });
     }

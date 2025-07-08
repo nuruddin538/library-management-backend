@@ -12,18 +12,15 @@ export const getBooks = async (req: Request, res: Response) => {
 };
 
 // Get a single book by ID
-export const getBookById = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
+export const getBookById = async (req: Request, res: Response) => {
   try {
     const book = await Book.findById(req.params.id);
     if (!book) {
-      return res.status(404).json({ message: "Book not found" });
+      res.status(404).json({ message: "Book not found" });
     }
-    return res.status(200).json(book);
+    res.status(200).json(book);
   } catch (err) {
-    return res.status(500).json({ message: "Error fetching book", error: err });
+    res.status(500).json({ message: "Error fetching book", error: err });
   }
 };
 
@@ -62,7 +59,7 @@ export const updateBook = async (req: Request, res: Response) => {
       { new: true }
     );
     if (!updatedbook) {
-      return res.status(404).json({ message: "Book not found" });
+      res.status(404).json({ message: "Book not found" });
     }
     res.status(200).json(updatedbook);
   } catch (err) {
@@ -75,7 +72,7 @@ export const deleteBook = async (req: Request, res: Response) => {
   try {
     const deletedBook = await Book.findByIdAndDelete(req.params.id);
     if (!deletedBook) {
-      return res.status(404).json({ message: "Book not found" });
+      res.status(404).json({ message: "Book not found" });
     }
     res.status(200).json({ message: "Book deleted successfully" });
   } catch (err) {

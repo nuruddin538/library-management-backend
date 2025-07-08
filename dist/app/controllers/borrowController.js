@@ -20,15 +20,15 @@ const borrowBook = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     const { bookId } = req.params;
     const { quantity, dueDate } = req.body;
     if (!bookId || !quantity || !dueDate) {
-        return res.status(400).json({ message: "Missing required fields" });
+        res.status(400).json({ message: "Missing required fields" });
     }
     try {
         const book = yield Book_1.default.findById(bookId);
         if (!book) {
-            return res.status(404).json({ message: "Book not found" });
+            res.status(404).json({ message: "Book not found" });
         }
         if (book.copies < quantity) {
-            return res.status(400).json({ message: "Not enough copies available" });
+            res.status(400).json({ message: "Not enough copies available" });
         }
         // Create borrow record
         const newBorrow = yield Borrow_1.default.create({

@@ -1,39 +1,102 @@
 import { Request, Response } from "express";
-import Book from "../models/Book";
-import Borrow from "../models/Borrow";
+import mongoose from "mongoose";
+import Book, { IBook } from "../models/Book";
+import Borrow, { IBorrow } from "../models/Borrow";
+import { availableMemory } from "process";
+
+interface BorrowRequest {
+  quantity: number;
+  dueDate: Date;
+}
 
 // Borrow a book
 export const borrowBook = async (req: Request, res: Response) => {
   const { bookId } = req.params;
-  const { quantity, dueDate } = req.body;
+  const { quantity, dueDate } = req.body as BorrowRequest;
 
-  if (!bookId || !quantity || !dueDate) {
-    return res.status(400).json({ message: "Missing required fields" });
+  // Validate input
+  if (!mongoose.Types.ObjectId.isValid(bookId)) {
+    res.status(400).json({ message: "Invalid book ID" });
   }
 
+  if (!quantity || !dueDate) {
+    res.status(400).json({ message: "Missing required fields" });
+  }
+
+  if (quantity <= 0 || !Number.isInteger(quantity)) {
+    res.status(400).json({ message: "Quantity must be a positive integer" });
+  }
+
+  if (new Date(dueDate) <= new Date()) {
+    res.status(400).json({ message: "Due data must be in the future" });
+  }
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    const book = await Book.findById(bookId);
+    // Find book with session
+    const book = await Book.findById(bookId).session(session);
+
     if (!book) {
-      return res.status(404).json({ message: "Book not found" });
+      await session.abortTransaction();
+      await session.endSession();
+      return res.status(400).json({ message: "Book not found" });
     }
+
+    // Check available copies
     if (book.copies < quantity) {
-      return res.status(400).json({ message: "Not enough copies available" });
+      await session.abortTransaction();
+      await session.endSession();
+      res.status(400).json({
+        message: "Not enough copies available",
+        available: book.copies,
+        requested: quantity,
+      });
     }
 
     // Create borrow record
-    const newBorrow = await Borrow.create({
+    const borrow = new Borrow({
       book: bookId,
       quantity,
       dueDate,
     });
 
+    const newBorrow = await borrow.save({ session });
+
     // Update book copies
     book.copies -= quantity;
     book.available = book.copies > 0;
-    await book.save();
-    res.status(201).json(newBorrow);
+    await book.save({ session });
+
+    await session.commitTransaction();
+    await session.endSession();
+
+    res.status(201).json({
+      message: "Book borrowed successfully",
+      borrow: newBorrow,
+      remainingCopies: book.copies,
+    });
   } catch (err) {
-    res.status(500).json({ message: "Error borrowing book", error: err });
+    await session.abortTransaction();
+    await session.endSession();
+
+    if (err instanceof mongoose.Error.ValidationError) {
+      res.status(400).json({
+        message: "Validation error",
+        error: err.message,
+      });
+    }
+
+    // res.status(500).json({
+    //   message: "Error borrowing book",
+    //   error: err instanceof Error ? err.message : "Unknown error",
+    // });
+
+    res.status(500).json({
+      message: "Error borrowing book",
+      error: err instanceof Error ? err.message : "Unknow error",
+    });
   }
 };
 
@@ -44,7 +107,12 @@ export const getBorrowSummary = async (req: Request, res: Response) => {
       {
         $group: {
           _id: "$book",
-          totalQuantity: { $sum: "$quantity" },
+          totalBorrowed: { $sum: "$quantity" },
+          activeBorrows: {
+            $sum: {
+              $cond: [{ $gt: ["$dueDate", new Date()] }, "$quantity", 0],
+            },
+          },
         },
       },
       {
@@ -60,16 +128,26 @@ export const getBorrowSummary = async (req: Request, res: Response) => {
       },
       {
         $project: {
+          bookId: "$_id",
           bookTitle: "$bookDetails.title",
-          isbn: "$bookDetails.isbn",
-          totalQuantity: 1,
+          author: "$bookDetails.isbn",
+          totalBorrow: 1,
+          activeBorrows: 1,
+          availableCopies: {
+            $subtract: ["$bookDetails.copies", "$totalBorrowed"],
+          },
+          _id: 0,
         },
       },
     ]);
-    res.status(200).json(summary);
+    res.status(200).json({
+      message: "Borrow summary retrieved successfully",
+      data: summary,
+    });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Error fetching borrow summary", error: err });
+    res.status(500).json({
+      message: "Error fetching borrow summary",
+      error: err instanceof Error ? err.message : "Unknown error",
+    });
   }
 };
