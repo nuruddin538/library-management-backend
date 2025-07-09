@@ -13,37 +13,82 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getBorrowSummary = exports.borrowBook = void 0;
+const mongoose_1 = __importDefault(require("mongoose"));
 const Book_1 = __importDefault(require("../models/Book"));
 const Borrow_1 = __importDefault(require("../models/Borrow"));
 // Borrow a book
 const borrowBook = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { bookId } = req.params;
     const { quantity, dueDate } = req.body;
-    if (!bookId || !quantity || !dueDate) {
+    // Validate input
+    if (!mongoose_1.default.Types.ObjectId.isValid(bookId)) {
+        res.status(400).json({ message: "Invalid book ID" });
+    }
+    if (!quantity || !dueDate) {
         res.status(400).json({ message: "Missing required fields" });
     }
+    if (quantity <= 0 || !Number.isInteger(quantity)) {
+        res.status(400).json({ message: "Quantity must be a positive integer" });
+    }
+    if (new Date(dueDate) <= new Date()) {
+        res.status(400).json({ message: "Due data must be in the future" });
+    }
+    const session = yield mongoose_1.default.startSession();
+    session.startTransaction();
     try {
-        const book = yield Book_1.default.findById(bookId);
+        // Find book with session
+        const book = yield Book_1.default.findById(bookId).session(session);
         if (!book) {
-            res.status(404).json({ message: "Book not found" });
+            yield session.abortTransaction();
+            yield session.endSession();
+            return res.status(400).json({ message: "Book not found" });
         }
+        // Check available copies
         if (book.copies < quantity) {
-            res.status(400).json({ message: "Not enough copies available" });
+            yield session.abortTransaction();
+            yield session.endSession();
+            res.status(400).json({
+                message: "Not enough copies available",
+                available: book.copies,
+                requested: quantity,
+            });
         }
         // Create borrow record
-        const newBorrow = yield Borrow_1.default.create({
+        const borrow = new Borrow_1.default({
             book: bookId,
             quantity,
             dueDate,
         });
+        const newBorrow = yield borrow.save({ session });
         // Update book copies
         book.copies -= quantity;
         book.available = book.copies > 0;
-        yield book.save();
-        res.status(201).json(newBorrow);
+        yield book.save({ session });
+        yield session.commitTransaction();
+        yield session.endSession();
+        res.status(201).json({
+            message: "Book borrowed successfully",
+            borrow: newBorrow,
+            remainingCopies: book.copies,
+        });
     }
     catch (err) {
-        res.status(500).json({ message: "Error borrowing book", error: err });
+        yield session.abortTransaction();
+        yield session.endSession();
+        if (err instanceof mongoose_1.default.Error.ValidationError) {
+            res.status(400).json({
+                message: "Validation error",
+                error: err.message,
+            });
+        }
+        // res.status(500).json({
+        //   message: "Error borrowing book",
+        //   error: err instanceof Error ? err.message : "Unknown error",
+        // });
+        res.status(500).json({
+            message: "Error borrowing book",
+            error: err instanceof Error ? err.message : "Unknow error",
+        });
     }
 });
 exports.borrowBook = borrowBook;
@@ -54,7 +99,12 @@ const getBorrowSummary = (req, res) => __awaiter(void 0, void 0, void 0, functio
             {
                 $group: {
                     _id: "$book",
-                    totalQuantity: { $sum: "$quantity" },
+                    totalBorrowed: { $sum: "$quantity" },
+                    activeBorrows: {
+                        $sum: {
+                            $cond: [{ $gt: ["$dueDate", new Date()] }, "$quantity", 0],
+                        },
+                    },
                 },
             },
             {
@@ -70,18 +120,28 @@ const getBorrowSummary = (req, res) => __awaiter(void 0, void 0, void 0, functio
             },
             {
                 $project: {
+                    bookId: "$_id",
                     bookTitle: "$bookDetails.title",
-                    isbn: "$bookDetails.isbn",
-                    totalQuantity: 1,
+                    author: "$bookDetails.isbn",
+                    totalBorrow: 1,
+                    activeBorrows: 1,
+                    availableCopies: {
+                        $subtract: ["$bookDetails.copies", "$totalBorrowed"],
+                    },
+                    _id: 0,
                 },
             },
         ]);
-        res.status(200).json(summary);
+        res.status(200).json({
+            message: "Borrow summary retrieved successfully",
+            data: summary,
+        });
     }
     catch (err) {
-        res
-            .status(500)
-            .json({ message: "Error fetching borrow summary", error: err });
+        res.status(500).json({
+            message: "Error fetching borrow summary",
+            error: err instanceof Error ? err.message : "Unknown error",
+        });
     }
 });
 exports.getBorrowSummary = getBorrowSummary;

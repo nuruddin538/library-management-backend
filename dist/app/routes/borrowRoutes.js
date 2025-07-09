@@ -17,7 +17,8 @@ router.post("/:bookId", (req, res) => __awaiter(void 0, void 0, void 0, function
         yield (0, borrowController_1.borrowBook)(req, res);
     }
     catch (error) {
-        res.status(500).json({ error: error.message });
+        const err = error;
+        res.status(500).json({ error: err.message });
     }
 }));
 router.get("/summary", borrowController_1.getBorrowSummary);

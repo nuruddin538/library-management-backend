@@ -16,9 +16,9 @@ const BookSchema: Schema = new Schema(
     author: { type: String, required: true },
     genre: { type: String, required: true },
     isbn: { type: String, required: true, unique: true },
-    description: { type: String, required: false },
-    copies: { type: Number, required: true, default: 1 },
-    available: { type: Boolean, required: true, default: true },
+    description: { type: String },
+    copies: { type: Number, required: true, min: 0 },
+    available: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

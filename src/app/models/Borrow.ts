@@ -1,8 +1,7 @@
 import mongoose, { Document, Schema } from "mongoose";
-import { IBook } from "./Book";
 
 export interface IBorrow extends Document {
-  book: IBook["_id"];
+  book: mongoose.Types.ObjectId;
   quantity: number;
   dueDate: Date;
 }
